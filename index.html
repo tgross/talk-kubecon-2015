@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Framework-Agnostic Discovery</title>
-  <meta name="description" content="The real value of containers -- fast immutable deployments, maximizing resource utilization, and bare-metal performance -- comes from an architecture optimized for containers. This is container-native architecture.">
+  <meta name="description" content="The real value of containers -- fast immutable deployments, maximizing resource utilization, and bare-metal performance -- comes from an architecture optimized for containers. This is container-native architecutre, and requires framework-agnostic discovery.">
   <meta name="author" content="Tim Gross">
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -42,7 +42,7 @@
     <small><a href="http://0x74696d.com">Tim Gross</a> | Product Manager, <a href="http://joyent.com">Joyent</a> | <a href="http://twitter.com/0x74696d">@0x74696d</a></small>
   </p>
   <aside class="notes">
-    Abstract: Moving your application into a container and deploying it to production is a great first step towards taking advantage of containerization. This gets you past "works on my machine", and Docker makes this easy. But the real value of containers -- fast immutable deployments, maximizing resource utilization, and bare-metal performance -- comes from an architecture optimized for containers... a container-native architecture
+    Abstract: Moving your application into a container and deploying it to production is a great first step towards taking advantage of containerization. This gets you past "works on my machine", and Docker makes this easy. But the real value of containers -- fast immutable deployments, maximizing resource utilization, and bare-metal performance -- comes from an architecture optimized for containers... a container-native architecture, and requires framework-agnostic discovery
   </aside>
 </section>
 
@@ -50,11 +50,13 @@
   <h2>Container-native?</h2>
   <p class="fragment">Containers are a first class citizen.</p>
   <p class="fragment">Each container is an equal peer on the network.</p>
+  <p class="fragment">Discovery should be framework-agnostic.</p>
   <aside class="notes" data-markdown><script type="text/template">
       containers are an opinionated deployment of isolation (c.f. unikernels, VMs)
       I will argue:
       - not about fat vs thin, multi-process vs single process, which of umpteen schedulers, etc.
       - containers must not be ghettoized in the host's network.
+      - framework-agnostic if we want to support existing applications
   </script></aside>
 </section>
 
@@ -107,7 +109,6 @@
   <p class="fragment" style="text-align:right;">... Docker in production since Oct 2013</p>
   <aside class="notes" data-markdown><script type="text/template">
       - all on AWS
-      - Django/Python w/ go microservices later on
       - autoscaling, swings in load x10-20 over course of day
       - close to 100k req/sec peak
   </script></aside>
@@ -389,30 +390,6 @@
   </script></aside>
 </section>
 
-<!--
-<section data-background="./img/grid-black.png">
-  <pre><code class="sh" data-trim>
-#!/bin/bash
-# startup script for our awesomeapp
-
-# register with consul
-curl --fail -s -X PUT -d @myservice.json \
-      http://consul.example.com:8500/v1/agent/service/register
-
-# start health check daemon and background it
-/opt/check-health-of-awesomeapp.sh &
-
-# run app
-/opt/awesomeapp serve --bind 0.0.0.0 -p 8080
-  </code></pre>
-  <aside class="notes" data-markdown><script type="text/template">
-      - don't do this!
-      - if check-health-of-awesomeapp dies, this won't exit
-  </script></aside>
-</section>
--->
-
-
 <section>
   <h2>Containerbuddy to the rescue!</h2>
   <a href="https://github.com/joyent/containerbuddy">https://github.com/joyent/containerbuddy</a>
@@ -597,29 +574,6 @@ nginx:
     - We're using docker-compose here but we can use whatever orchestration tool we want
   </script></aside>
 </section>
-
-<!--
-<section data-background="./img/grid-black.png">
-  <pre><code class="sh" data-trim>
-$ cat ./app/Dockerfile
-
-# a minimal Node.js container including containerbuddy
-FROM node:slim
-
-# install curl
-RUN apt-get update && \
-    apt-get install -y \
-    curl && \
-    rm -rf /var/lib/apt/lists/*
-
-# install a simple http server
-RUN npm install -g json http-server
-
-# add containerbuddy and all our configuration
-ADD opt/containerbuddy /opt/containerbuddy/
-  </code></pre>
-</section>
--->
 
 
 <!--
