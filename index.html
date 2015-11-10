@@ -158,6 +158,7 @@
   <img data-src="img/anti-pattern-1-2.png"/>
   <aside class="notes" data-markdown><script type="text/template">
       - downstream applications *must* talk to the LB
+      - also note: utilization is terrible
   </script></aside>
 </section>
 
@@ -221,7 +222,7 @@
 <section>
   <h2>DNS</h2>
   <p>Simple discovery! But...</p>
-  <p class="fragment">Can't address individual hosts behind a record.</p>
+  <p class="fragment">Can't address individual hosts behind a record.*</p>
   <p class="fragment">No health checking.*</p>
   <p class="fragment">TTL caching.</p>
   <aside class="notes" data-markdown><script type="text/template">
@@ -234,18 +235,11 @@
 </section>
 
 <section>
-  <h2>Utilization</h2>
-  <p>One container per VM!</p>
-</section>
-
-<section>
   <img data-src="img/anti-pattern-1-3.png"/>
   <aside class="notes" data-markdown><script type="text/template">
-      - configure LB to listen on multiple ports or register VM w/ multiple LBs
-      - Do we remove the entire node because one of its services dies?
-      - Do we need an instance of every service on each VM or can we route some ports to only some instances?
-      - Do we even have that option if we're using a managed LB like ELB?
-      - Can't run more than one copy of a container on each host w/o NAT; can't find the port w/ NAT
+      - register VM w/ multiple LBs
+      - Can't run more than one copy of a container on each host w/o NAT
+      - can't find the port w/ NAT
   </script></aside>
 </section>
 
@@ -260,35 +254,20 @@
 </section>
 
 <section>
-  <h2>More complexity!</h2>
-  <p class="fragment">Separate lifecycle for VMs and app containers</p>
+  <h2>Networking still sucks!</h2>
   <p class="fragment">Containers don't have their own IP</p>
   <p class="fragment">Pass through proxy for all outbound requests</p>
   <p class="fragment">All packets go through NAT or port forwarding</p>
   <aside class="notes" data-markdown><script type="text/template">
-      still have...
       also:
-      - way more containers
       - deploying health check code into proxy/agent container?
-      - hard to shut down VM with lingering container
   </script></aside>
-</section>
-
-<section>
-  <h2>We can do better!</h2>
 </section>
 
 <section>
   <h2>The Container-Native Alternative?</h2>
   <p>Cut the cruft!</p>
-  <p class="fragment"><em>Applications</em> ask for discovery of upstream services.</p>
-  <p class="fragment"><em>Applications</em> tell the discovery service where to find them.</p>
-  <p class="fragment"><em>Applications</em> report if they are healthy.</p>
-</section>
-
-<section>
-  <h2>The Container-Native Alternative</h2>
-  <p>Push responsibility of the application topology away from the network infrastructure and into the application itself where it belongs.</p>
+  <p class="fragment">Push responsibility of the application topology away from the network infrastructure and into the application itself where it belongs.</p>
   <aside class="notes" data-markdown><script type="text/template">
       - only app has the full picture
       - this is why we use appmon services like NewRelic or DeferPanic or send metrics via statsd:
@@ -310,7 +289,6 @@
       - tell discovery: "hey I'm healthy!"
       - check in with discovery for topology changes
       - reload config on upstream changes
-      - state is in discovery; each app instance is stateless!
   </script></aside>
 </section>
 
@@ -342,9 +320,9 @@
       <li>Deployment of sidecar bound to deployment of app</li>
     </ul>
   </div>
-  <aside class="notes" data-markdown><script type="text/template">
-      - if we divest to sidecar we don't have to change app?
-  </script></aside>
+  <aside class="notes">
+    can we avoid changing app if we divest to sidecar?
+  </aside>
 </section>
 
 <section>
@@ -355,8 +333,6 @@
   <aside class="notes" data-markdown><script type="text/template">
       No sidecars allows:
       - ex. no adding mysqlclient to Consul
-      - health check can be different mechanism than external API
-      - doesn't have to be HTTP response from blocked server
       - can even do stuff like HTTP long polling / pubsub
   </script></aside>
 </section>
@@ -394,9 +370,8 @@
   </ul>
   <aside class="notes" data-markdown><script type="text/template">
       - written in Go, open source by Joyent under Mozilla Public License
-      - acts as PID1 and fork/execs app
+      - acts as PID1, forks app, waits
       - discovery Consul today but extensible
-      - if app fails, consul won't get heartbeat and after TTL expires Consul will mark unhealthy
       - in-container exectable means behavior is deployed with the container
   </script></aside>
 </section>
