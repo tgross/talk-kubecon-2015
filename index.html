@@ -199,7 +199,6 @@
   </script></aside>
 </section>
 
-<!-- TODO review this slide w/ Casey, Kubes is planning on doing this all in IP tables?!  -->
 <section>
   <h2>Can we avoid NAT?</h2>
   <img style="width:50%;float:left;" data-src="img/docker-bridge-networking.png"/>
@@ -254,7 +253,7 @@
   <img data-src="img/anti-pattern-2.png"/>
   <aside class="notes" data-markdown><script type="text/template">
       scheduler-backed variant (inc Kubernetes)
-      - break down discrete LB into on-host proxy (ex. HAProxy)
+      - break down discrete LB into on-host proxy (ex. HAProxy, Kubeproxy)
       - manage proxy w/ application scheduler (on-host agent)
       - agent updates config of local proxy, app containers talk only to proxy
   </script></aside>
