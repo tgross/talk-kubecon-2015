@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Framework-Agnostic Discovery</title>
+  <meta name="description" content="The real value of containers -- fast immutable deployments, maximizing resource utilization, and bare-metal performance -- comes from an architecture optimized for containers. This is container-native architecture.">
+  <meta name="author" content="Tim Gross">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="css/reveal.css">
+  <link rel="stylesheet" href="css/theme/joy.css" id="theme">
+  <link rel="stylesheet" href="lib/css/zenburn.css"> <!-- code syntax highlighting -->
+  <style>
+    /* theme overrides */
+    .reveal section img{
+      border:0;
+      box-shadow: none;
+    }
+    .reveal li {
+      margin:20px;
+    }
+
+  </style>
+  <script>
+    // for printing / PDF export
+    var link = document.createElement( 'link' );
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+    document.getElementsByTagName( 'head' )[0].appendChild( link );
+  </script>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section>
+  <h1>Framework-Agnostic Discovery</h1>
+  <p>
+    <small><a href="http://0x74696d.com">Tim Gross</a> | Product Manager, <a href="http://joyent.com">Joyent</a> | <a href="http://twitter.com/0x74696d">@0x74696d</a></small>
+  </p>
+  <aside class="notes">
+    Abstract: Moving your application into a container and deploying it to production is a great first step towards taking advantage of containerization. This gets you past "works on my machine", and Docker makes this easy. But the real value of containers -- fast immutable deployments, maximizing resource utilization, and bare-metal performance -- comes from an architecture optimized for containers... a container-native architecture
+  </aside>
+</section>
+
+<section>
+  <h2>Container-native?</h2>
+  <p class="fragment">Containers are a first class citizen.</p>
+  <p class="fragment">Each container is an equal peer on the network.</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      containers are an opinionated deployment of isolation (c.f. unikernels, VMs)
+      I will argue:
+      - not about fat vs thin, multi-process vs single process, which of umpteen schedulers, etc.
+      - containers must not be ghettoized in the host's network.
+  </script></aside>
+</section>
+
+<section>
+  <h2>Remember: your mission is not "manage VM<span style="text-transform:lowercase;">s</span>."</h2>
+  <p class="fragment">Your mission is what your application does for your organization.</p>
+  <p class="fragment">Infrastructure (undifferentiated heavy lifting) is incidental cost and incidental complexity.</p>
+  <p class="fragment">Application containers make the full promise of cloud computing possible...</p>
+  <p class="fragment">but require new ways of working.</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      - value proposition of containers: elasticity, utilization, isolation
+      - only if they are first class-citizens
+  </script></aside>
+</section>
+
+<section>
+  <h2>Let me tell you a story...</h2>
+</section>
+
+<section>
+  <img style="width:40%;float:right;" data-src="img/header.png"/>
+  <div style="width:60%;float:left;text-align:left;">
+  <img data-src="img/triton-logo.png"/>
+  <p>Triton Elastic Container Service</p>
+  <ul>
+    <li>Run Linux containers securely on bare-metal in public cloud</li>
+    <li class="fragment">Or run on-premise (it's open source!)</li>
+  </ul>
+  <aside class="notes" data-markdown><script type="text/template">
+      - me: product manager for Joyent
+      - running LX-brand zones (Linux containers as Solaris zones) for almost 10 years
+      - Triton is a Docker API lets you treat our whole datacenter as a single docker host
+      - (or yours)
+  </script></aside>
+</section>
+
+<section>
+  <img data-src="img/dramafever-splash.jpg"/>
+  <p style="text-align:right;">Director of DevOps</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      - but before that... DramaFever
+      - foreign dramas/romcoms (kdrama, telenovellas, british dramas, movies)
+      - Sundance Documentaries
+      - Shudder (horror)
+  </script></aside>
+</section>
+
+<section>
+  <img data-src="img/autoscaling.png"/>
+  <p class="fragment" style="text-align:right;">... Docker in production since Oct 2013</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      - all on AWS
+      - Django/Python w/ go microservices later on
+      - autoscaling, swings in load x10-20 over course of day
+      - close to 100k req/sec peak
+  </script></aside>
+</section>
+
+<section>
+  <h2>What Docker Solved For Us:</h2>
+  <p class="fragment">Human-and-machine-readable build documentation.</p>
+  <p class="fragment">No more "works on my machine."</p>
+  <p class="fragment">Fix dependency isolation.</p>
+  <p class="fragment">Interface-based approach to application deployment.</p>
+  <p class="fragment">Deployments are fast!</p>
+  <p class="fragment">DevOps kool-aid for everyone!</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      - (Dockerfiles). Get rid of day-long on-boarding.
+      - The container image that passes thru CI is the same image deployed to Dev, QA, Production, and back to local developer machines for debugging problems in prod.
+      - Ops doesn't care what crazy shit goes into the container anymore.
+      - "log this way", "expose a health check", "be stateless" == good-to-go
+  </script></aside>
+</section>
+
+<section>
+  <h2>Ok, what's wrong?</h2>
+  <aside class="notes">No obligatory container ship disaster image</aside>
+</section>
+
+<section>
+  <img data-src="img/elb-in-front-of-microservice.png"/>
+  <aside class="notes" data-markdown><script type="text/template">
+    - btw: anywhere I'm saying VM it could easily be bare metal too
+    - ELB in front of each microservice.
+    - Dynamic scaling of backends.
+    - ELB makes health checks and removes nodes
+  </script></aside>
+</section>
+
+<section data-transition="slide none">
+  <img data-src="img/anti-pattern-1-1.png"/>
+  <aside class="notes" data-markdown><script type="text/template">
+      - App ELBs have well-known name and port Ex. `app1.mycompany.example.com:8080`
+      - route traffic away from the app by changing DNS
+      - downstream applications can just talk to the LB
+  </script></aside>
+</section>
+
+<section data-transition="none slide">
+  <img data-src="img/anti-pattern-1-2.png"/>
+  <aside class="notes" data-markdown><script type="text/template">
+      - downstream applications *must* talk to the LB
+  </script></aside>
+</section>
+
+<section>
+  <section>
+    <h2>NAT</h2>
+    <img data-src="img/docker-nat.png"/>
+    <aside class="notes" data-markdown><script type="text/template">
+        - this is the default `--bridge` networking
+        - there's also a virtualization layer here thru docker daemon
+        - bridge on host, veth interfaces attached to bridge and container
+    </script></aside>
+  </section>
+  <section>
+    <h2>NAT</h2>
+    <p><q>Docker's use of bridging and NAT noticeably increases the transmit path length; vhost-net is fairly efficient at transmitting but has high overhead on the receive side... In real network-intensive workloads, we expect such CPU overhead to reduce overall performance.</q></p>
+    <p><a href="http://domino.research.ibm.com/library/cyberdig.nsf/papers/0929052195DD819C85257D2300681E7B/$File/rc25482.pdf">IBM Research Report: An Updated Performance Comparison of Virtual Machines and Linux Containers</a></p>
+  </section>
+</section>
+
+<section>
+  <h2>Can we avoid NAT?</h2>
+  <img style="width:50%;float:left;" data-src="img/docker-host-networking.png"/>
+  <div>
+    <p><code>--host</code> networking</p>
+    <ul>
+      <li>further weakens multi-tenant security</li>
+      <li>port conflicts</li>
+      <li>port mapping at LB</li>
+    </ul>
+  </div>
+  <aside class="notes" data-markdown><script type="text/template">
+      - Docker recommendation for network I/O-intensive apps
+      - working around with `--host` makes utilization even worse
+      - Can't have multiple container per host on the same port.
+  </script></aside>
+</section>
+
+<section>
+  <h2>Can we avoid NAT?</h2>
+  <img style="width:50%;float:left;" data-src="img/docker-bridge-networking.png"/>
+  <div>
+    <p>Bridge (not <code>--bridge</code>) networking</p>
+    <ul>
+      <li>Can get IP per container</li>
+      <li>May need 2nd NIC</li>
+      <li>Scaling w/ subnet per host</li>
+    </ul>
+  </div>
+  <aside class="notes" data-markdown><script type="text/template">
+      - sim. to socketplane
+      - may need second NIC w/ some cloud providers
+      - subnet per host ex. Kubernetes
+      - closest to OpenSolaris Crossbow (i.e. Triton) you can get w/ Linux alone, but we do it all in-kernel
+  </script></aside>
+</section>
+
+<section>
+<h2>Single Point of Failure</h2>
+<a href="http://www.pcmag.com/article2/0,2817,2413572,00.asp"><img data-src="img/pcmag-xmas-outage.png"></a>
+<aside class="notes" data-markdown><script type="text/template">
+    - LB can fail when app won't
+    - even managed LBs: this happened to Netflix and DF
+    - this event was "human error", but ELB is built on EBS
+    - so even if your AWS EC2 instances aren't you can be hit
+  </script></aside>
+</section>
+
+<section>
+  <h2>DNS</h2>
+  <p>Simple discovery! But...</p>
+  <p class="fragment">Can't address individual hosts behind a record.</p>
+  <p class="fragment">No health checking.</p>
+  <p class="fragment">TTL caching.</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      - just hard-code a CNAME in your env var!
+      - can't load balance via DNS except round-robin
+      - (can use Consul w/ health checking)
+      - TTL: restart app to get changes in some frammeworks like Django and its DBs
+      - TTL: ELB IP addresses change! must use alias record and custom domain TTL!
+  </script></aside>
+</section>
+
+<section>
+  <h2>Utilization</h2>
+  <p>One container per VM!</p>
+  <aside class="notes">We didn't solve the problem we had with AMIs!</aside>
+</section>
+
+<section>
+  <img data-src="img/anti-pattern-1-3.png"/>
+  <aside class="notes" data-markdown><script type="text/template">
+      - configure LB to listen on multiple ports or register VM w/ multiple LBs
+      - Do we remove the entire node because one of its services dies?
+      - Do we need an instance of every service on each VM or can we route some ports to only some instances?
+      - Do we even have that option if we're using a managed LB like ELB?
+      - Can't run more than one copy of a container on each host w/o NAT; can't find the port w/ NAT
+  </script></aside>
+</section>
+
+<section>
+  <img data-src="img/anti-pattern-2.png"/>
+  <aside class="notes" data-markdown><script type="text/template">
+      scheduler-backed variant
+      - break down discrete LB into on-host proxy (ex. HAProxy)
+      - manage proxy w/ application scheduler (on-host agent)
+      - agent updates config of local proxy, app containers talk only to proxy
+  </script></aside>
+</section>
+
+<section>
+  <h2>More complexity!</h2>
+  <p class="fragment">Separate lifecycle for VMs and app containers</p>
+  <p class="fragment">Containers don't have their own IP</p>
+  <p class="fragment">Pass through proxy for all outbound requests</p>
+  <p class="fragment">All packets go through NAT or port forwarding</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      still have...
+      also:
+      - way more containers
+      - deploying health check code into proxy/agent container?
+      - hard to shut down VM with lingering container
+  </script></aside>
+</section>
+
+<section>
+  <h2>We can do better!</h2>
+</section>
+
+<section>
+  <h2>The Container-Native Alternative?</h2>
+  <p>Cut the cruft!</p>
+  <p class="fragment"><em>Applications</em> ask for discovery of upstream services.</p>
+  <p class="fragment"><em>Applications</em> tell the discovery service where to find them.</p>
+  <p class="fragment"><em>Applications</em> report if they are healthy.</p>
+</section>
+
+<section>
+  <h2>The Container-Native Alternative</h2>
+  <p>Push responsibility of the application topology away from the network infrastructure and into the application itself where it belongs.</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      - only app has the full picture
+      - this is why we use appmon services like NewRelic or DeferPanic or send metrics via statsd:
+        - perspective from inside the app container
+        - "CPU %" is not enough and it's a lie
+  </script></aside>
+</section>
+
+<section>
+  <h2>Responsibilities of a Container</h2>
+  <p class="fragment">Registration</p>
+  <p class="fragment">Self-introspection</p>
+  <p class="fragment">Heartbeats</p>
+  <p class="fragment">Look for change</p>
+  <p class="fragment">Respond to change</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      - register w/ discovery service at startup
+      - "am I healthy?"
+      - tell discovery: "hey I'm healthy!"
+      - check in with discovery for topology changes
+      - reload config on upstream changes
+      - state is in discovery; each app instance is stateless!
+  </script></aside>
+</section>
+
+<section>
+  <img data-src="img/containerbuddy-demo.png"/>
+  <aside class="notes" data-markdown><script type="text/template">
+      - nginx + app servers + consul as discovery service
+      - scale up/down app servers should result in Nginx getting new config and reloading
+  </script></aside>
+</section>
+
+<section>
+  <img data-src="img/container-native-arch.png"/>
+  <aside class="notes" data-markdown><script type="text/template">
+      - without host-local services we're free of the VM
+      - app containers physically located where placement engine decides
+      - scheduling of work is entirely separate
+      - app does its job; infrastructure handles resource allocation
+  </script></aside>
+</section>
+
+<section>
+  <h2>No sidecars</h2>
+  <a href="https://s-media-cache-ak0.pinimg.com/736x/75/db/08/75db08cd712e52f00cf3bb52bc5c2eff.jpg"><img style="width:40%;float:left;" data-src="img/no-sidecars.jpg"/></a>
+  <div style="width:60%;float:right;text-align:left;">
+    <ul>
+      <li>Sidecar needs to reach into application container</li>
+      <li>Unsuited for multi-tenant security</li>
+      <li>Deployment of sidecar bound to deployment of app</li>
+    </ul>
+  </div>
+  <aside class="notes" data-markdown><script type="text/template">
+      - if we divest to sidecar we don't have to change app?
+  </script></aside>
+</section>
+
+<section>
+  <h2>Application-Aware Health Checks</h2>
+  <p class="fragment">No packaging tooling into another service</p>
+  <p class="fragment">App container lifecycle separate from discovery service</p>
+  <p class="fragment">Respond quickly to changes</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      No sidecars allows:
+      - ex. no adding mysqlclient to Consul
+      - health check can be different mechanism than external API
+      - doesn't have to be HTTP response from blocked server
+      - can even do stuff like HTTP long polling / pubsub
+  </script></aside>
+</section>
+
+<section>
+  <h2>Demo</h2>
+</section>
+
+<section>
+  <h2><strike>Legacy</strike> Pre-Container Apps</h2>
+  <ul>
+    <li class="fragment">Registration: wrap start of app in a shell script</li>
+    <li class="fragment">Self-introspection: self-test?</li>
+    <li class="fragment">Heartbeats: um...</li>
+    <li class="fragment">Look for change: ???</li>
+    <li class="fragment">Respond to change: profit?</li>
+  </ul>
+  <aside class="notes" data-markdown><script type="text/template">
+      - plenty of good apps built for a pre-container world:
+        - not going to rewrite all of them!
+      - second process? needs a supervisor as PID1 to know if buddy failed
+  </script></aside>
+</section>
+
+<!--
+<section data-background="./img/grid-black.png">
+  <pre><code class="sh" data-trim>
+#!/bin/bash
+# startup script for our awesomeapp
+
+# register with consul
+curl --fail -s -X PUT -d @myservice.json \
+      http://consul.example.com:8500/v1/agent/service/register
+
+# start health check daemon and background it
+/opt/check-health-of-awesomeapp.sh &
+
+# run app
+/opt/awesomeapp serve --bind 0.0.0.0 -p 8080
+  </code></pre>
+  <aside class="notes" data-markdown><script type="text/template">
+      - don't do this!
+      - if check-health-of-awesomeapp dies, this won't exit
+  </script></aside>
+</section>
+-->
+
+
+<section>
+  <h2>Containerbuddy to the rescue!</h2>
+  <a href="https://github.com/joyent/containerbuddy">https://github.com/joyent/containerbuddy</a>
+</section>
+
+<section>
+  <h2>Containerbuddy:</h2>
+  <p>A shim to help make existing apps container-native</p>
+  <ul>
+    <li class="fragment">Registration: registers to Consul on startup</li>
+    <li class="fragment">Self-introspection: execute user-defined health check</li>
+    <li class="fragment">Heartbeats: send health status w/ TTL to Consul</li>
+    <li class="fragment">Look for change: poll Consul for changes</li>
+    <li class="fragment">Respond to change: execute user-defined response behavior</li>
+  </ul>
+  <aside class="notes" data-markdown><script type="text/template">
+      - written in Go, open source by Joyent under Mozilla Public License
+      - acts as PID1 and fork/execs app
+      - discovery Consul today but extensible
+      - if app fails, consul won't get heartbeat and after TTL expires Consul will mark unhealthy
+      - in-container exectable means behavior is deployed with the container
+  </script></aside>
+</section>
+
+<section>
+  <img data-src="img/containerbuddy-demo.png"/>
+  <aside class="notes">
+    containerbuddy does this work instead of legacy app
+  </aside>
+</section>
+
+<section>
+  <h2>No Supervision</h2>
+  <img style="width:35%;float:left;" data-src="img/not-my-supervisor.jpg"/>
+  <p style="text-align:right;">Containerbuddy is PID1</p>
+  <p style="text-align:right;">Returns exit code of shimmed process back to Docker Engine (or Triton) and <em>dies</em></p>
+  <p style="text-align:right;">Attaches <code>stdout/stderr</code> from app to <code>stdout/stderr</code> of container</p>
+  <aside class="notes" data-markdown><script type="text/template">
+      - if shimmed process dies, so does Containerbuddy
+      - exit code shows up in `docker ps -a`
+      - `docker logs` and docker log drivers work as expected
+  </script></aside>
+</section>
+
+<section data-background="./img/grid-black.png">
+<pre><code class="json" data-trim>{
+  "consul": "consul:8500",
+  "services": [
+    {
+      "name": "nginx",
+      "port": 80,
+      "health": "/usr/bin/curl --fail -s http://localhost/health",
+      "poll": 10,
+      "ttl": 25
+    }
+  ],
+  "backends": [
+    {
+      "name": "app",
+      "poll": 7,
+      "onChange": "/opt/containerbuddy/reload-nginx.sh"
+    }
+  ]
+}
+  </code></pre>
+  <aside class="notes" data-markdown><script type="text/template">
+      containerbuddy config
+      - check health endpoint for 200OK
+      - poll consul for `app` and fire reload on change
+  </script></aside>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <pre><code class="sh" data-trim>
+$ cat ./nginx/Dockerfile
+
+# a minimal Nginx container including containerbuddy and a
+# simple virtulhost config
+FROM nginx:latest
+
+# install curl and unzip
+RUN apt-get update && apt-get install -y \
+    curl \
+    unzip && \
+    rm -rf /var/lib/apt/lists/*
+
+# install consul-template
+RUN curl -Lo /tmp/consul_template_0.11.0_linux_amd64.zip \
+    https://github.com/hashicorp/consul-template/releases/download\
+    /v0.11.0/consul_template_0.11.0_linux_amd64.zip && \
+unzip -d /bin /tmp/consul_template_0.11.0_linux_amd64.zip
+
+# add containerbuddy and all our configuration
+ADD opt/containerbuddy /opt/containerbuddy/
+ADD etc/nginx/conf.d /etc/nginx/conf.d/
+  </code></pre>
+</section>
+
+
+<section data-background="./img/grid-black.png">
+  <section data-background="./img/grid-black.png">
+    <pre><code data-trim>
+$ less ./nginx/default.ctmpl
+
+# for each service, create a backend
+{{range services}}
+upstream {{.Name}} {
+    # write the health service address:port pairs for this backend
+    {{range service .Name}}
+    server {{.Address}}:{{.Port}};
+    {{end}}
+}
+{{end}}
+    </code></pre>
+    <aside class="notes" data-markdown><script type="text/template">
+        - write an Nginx upstream stanza for each service from consul
+        - "server ip:port"
+    </script></aside>
+  </section>
+  <section data-background="./img/grid-black.png">
+    <pre><code data-trim>
+server {
+    listen 80;
+    server_name _;
+
+    # need ngx_http_stub_status_module compiled-in
+    location /health {
+        stub_status on;
+        allow 127.0.0.1;
+        deny all;
+    }
+
+    {{range services}}
+    location /{{.Name}}/ {
+        proxy_pass http://{{.Name}}/;
+        proxy_redirect off;
+    }
+    {{end}}
+}
+    </code></pre>
+  </section>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <pre><code class="sh" data-trim>
+$ cat ./nginx/opt/containerbuddy/reload-nginx.sh
+
+# fetch latest virtualhost template from Consul k/v
+curl -s --fail consul:8500/v1/kv/nginx/template?raw \
+    > /tmp/virtualhost.ctmpl
+
+# render virtualhost template using values from Consul and reload Nginx
+consul-template \
+  -once \
+  -consul consul:8500 \
+  -template \
+  "/tmp/virtualhost.ctmpl:/etc/nginx/conf.d/default.conf:nginx -s reload"
+  </code></pre>
+  <aside class="notes" data-markdown><script type="text/template">
+      - pull template from consul and generate here, then reload
+      - a good reason to get vhost from consul is to do zero-downtime reload on vhost changes
+  </script></aside>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <pre><code class="md" data-trim>
+nginx:
+  image: 0x74696d/containerbuddy-demo-nginx
+  mem_limit: 512m
+  ports:
+  - 80
+  links:
+  - consul:consul
+  restart: always
+  environment:
+  - CONTAINERBUDDY=file:///opt/containerbuddy/nginx.json
+  command: >
+    /opt/containerbuddy/containerbuddy
+    nginx -g "daemon off;"
+  </code></pre>
+  <aside class="notes" data-markdown><script type="text/template">
+    - We're using docker-compose here but we can use whatever orchestration tool we want
+  </script></aside>
+</section>
+
+<!--
+<section data-background="./img/grid-black.png">
+  <pre><code class="sh" data-trim>
+$ cat ./app/Dockerfile
+
+# a minimal Node.js container including containerbuddy
+FROM node:slim
+
+# install curl
+RUN apt-get update && \
+    apt-get install -y \
+    curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# install a simple http server
+RUN npm install -g json http-server
+
+# add containerbuddy and all our configuration
+ADD opt/containerbuddy /opt/containerbuddy/
+  </code></pre>
+</section>
+-->
+
+
+<!--
+<section data-background="./img/grid-black.png">
+  <section data-background="./img/grid-black.png">
+    <h2 style="color:#DCDCDC;">Let's run it!</h2>
+    <pre><code class="sh" data-trim>
+$ env | grep DOCKER
+DOCKER_TLS_VERIFY=1
+DOCKER_CLIENT_TIMEOUT=300
+DOCKER_CERT_PATH=/Users/tim.gross/.sdc/docker/timgross
+DOCKER_HOST=tcp://us-east-1.docker.joyent.com:2376
+    </code></pre>
+    <aside class="notes">
+        point my docker client at the docker host
+    </aside>
+  </section>
+  <section data-background="./img/grid-black.png">
+    <pre><code class="sh" data-trim>
+$ ./start.sh -p example
+Starting example application
+Pulling latest container versions
+... blah blah...
+Starting Consul.
+Creating example_consul_1...
+Writing template values to Consul at 72.2.119.22
+true
+Opening consul console
+    </code></pre>
+  </section>
+</section>
+-->
+
+<section data-background="./img/grid-black.png">
+  <pre><code class="sh" data-trim>
+echo 'Starting Consul.'
+docker-compose -p example up -d consul
+
+# get network info from consul. alternately we can push this into
+# a DNS A-record to bootstrap the cluster
+CONSUL_IP=$(docker inspect example_consul_1 \
+            | json -a NetworkSettings.IPAddress)
+
+echo "Writing template values to Consul at ${CONSUL_IP}"
+curl --fail -s -X PUT --data-binary @./nginx/default.ctmpl \
+      http://${CONSUL_IP}:8500/v1/kv/nginx/template
+
+echo 'Opening consul console'
+open http://${CONSUL_IP}:8500/ui
+  </code></pre>
+  <aside class="notes" data-markdown><script type="text/template">
+      - We can use docker inspect to get the IP because the container has its own IP!
+      - pushing template into consul
+  </script></aside>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <img data-src="img/consul-template.png"/>
+</section>
+
+<section data-background="./img/grid-black.png">
+    <pre><code class="sh" data-trim>
+Starting application servers and Nginx
+example_consul_1 is up-to-date
+Creating example_nginx_1...
+Creating example_app_1...
+Waiting for Nginx at 72.2.115.34:80 to pick up initial configuration.
+...................
+Opening web page... the page will reload every 5 seconds with any updates.
+Try scaling up the app!
+docker-compose -p example scale app=3
+    </code></pre>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <pre><code class="sh" data-trim>
+echo 'Starting application servers and Nginx'
+docker-compose -p example up -d
+
+# get network info from Nginx and poll it for liveness
+NGINX_IP=$(docker inspect example_nginx_1 \
+           | json -a NetworkSettings.IPAddress)
+echo "Waiting for Nginx at ${NGINX_IP} to pick up initial configuration."
+while :
+  do
+  sleep 1
+  curl -s --fail -o /dev/null "http://${NGINX_IP}/app/" && break
+  echo -ne .
+done
+echo
+echo 'Opening web page... the page will reload every 5 seconds'
+echo 'with any updates.'
+open http://${NGINX_IP}/app/
+  </code></pre>
+  <aside class="notes" data-markdown><script type="text/template">
+     - We're using docker-compose here but we can use whatever orchestration tool we want
+     - We can use docker inspect to get the IP because the container has its own IP!
+  </script></aside>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <img style="width:80%;" data-src="img/nginx-app-1.png"/>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <h2 style="color:#DCDCDC;">Does it <strike>blend</strike> scale?</h2>
+  <pre><code class="sh" data-trim>
+$ docker-compose -p example scale app=3
+Creating and starting 2... done
+Creating and starting 3... done
+  </code></pre>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <img data-src="img/consul-ui-full.png"/>
+</section>
+
+<section data-background="./img/grid-black.png">
+  <img style="width:80%;" data-src="img/nginx-app.gif"/>
+</section>
+
+<section>
+  <img data-src="img/containerbuddy-demo.png"/>
+  <aside class="notes" data-markdown><script type="text/template">
+      we handled: registration, self-introspection, heartbeats, looking for change, responding to change
+      - as scalable as our data store
+      - easily could be library code
+  </script></aside>
+</section>
+
+<section>
+  <table>
+    <thead>
+      <tr>
+        <th>The Old Way</th>
+        <th>The Container-Native Way</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Extra network hop from LB or local proxy</td>
+        <td>Direct container-to-container commmunication</td>
+      <tr>
+      <tr>
+        <td>NAT</td>
+        <td>Containers have their own IP</td>
+      </tr>
+      <tr>
+        <td>DNS TTL</td>
+        <td>Topology changes propogate immediately</td>
+      </tr>
+      <tr>
+        <td>Health checks in the LB</td>
+        <td>Applications report their own health</td>
+      </tr>
+      <tr>
+        <td>Two build & orchestration pipelines</td>
+        <td>Focus on your app alone</td>
+      </tr>
+      <tr>
+        <td>VMs</td>
+        <td>Secure multi-tenant bare-metal</td>
+      </tr>
+    </tbody>
+  </table>
+  <aside class="notes" data-markdown><script type="text/template">
+      - *isn't* about which scheduling framework you use
+      - *isn't* about the size of the container
+      - *isn't* about how many processes are in the container
+      - *is* about containers as first class citizens
+      - *is* about applications owning and responding to change
+      - *is* about building your app
+      - deploying on secure multi-tenant bare metal is the way to do it
+  </script></aside>
+</section>
+
+<section>
+  <img data-src="img/container-native-arch.png"/>
+  <a href="http://0x74696d.com/talk-kubecon-2015/#/">http://0x74696d.com/talk-kubecon-2015/#/</a>
+</section>
+
+</div> <!-- slides -->
+</div> <!-- reveal -->
+
+  <script src="lib/js/head.min.js"></script>
+  <script src="js/reveal.js"></script>
+  <script>
+    // See https://github.com/hakimel/reveal.js#configuration
+    Reveal.initialize({
+    controls: false,
+    progress: true,
+    slideNumber: 'c / t',
+    history: true,
+    center: true,
+    transition: 'slide', //concave',
+    transitionSpeed: 'slow',
+    margin: 0.1,
+    width: "90%",
+    //height: "100%",
+
+    parallaxBackgroundImage: 'img/grid.png',
+    parallaxBackgroundHorizontal: 100,
+
+    // Optional reveal.js plugins
+    dependencies: [
+    { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+    { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+    { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+    { src: 'plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+    { src: 'plugin/zoom-js/zoom.js', async: true },
+    { src: 'plugin/notes/notes.js', async: true }
+    ]
+    });
+
+  </script>
+</body>
+</html>
