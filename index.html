@@ -52,7 +52,6 @@
   <p class="fragment">Each container is an equal peer on the network.</p>
   <p class="fragment">Discovery should be framework-agnostic.</p>
   <aside class="notes" data-markdown><script type="text/template">
-      containers are an opinionated deployment of isolation (c.f. unikernels, VMs)
       I will argue:
       - not about fat vs thin, multi-process vs single process, which of umpteen schedulers, etc.
       - containers must not be ghettoized in the host's network.
@@ -70,10 +69,6 @@
       - value proposition of containers: elasticity, utilization, isolation
       - only if they are first class-citizens
   </script></aside>
-</section>
-
-<section>
-  <h2>Let me tell you a story...</h2>
 </section>
 
 <section>
@@ -255,7 +250,7 @@
 
 <section>
   <h2>Networking still sucks!</h2>
-  <p class="fragment">Containers don't have their own IP</p>
+  <p class="fragment">Containers don't have their own NIC on the data center network</p>
   <p class="fragment">Pass through proxy for all outbound requests</p>
   <p class="fragment">All packets go through NAT or port forwarding</p>
   <aside class="notes" data-markdown><script type="text/template">
@@ -353,8 +348,18 @@
   </script></aside>
 </section>
 
-<section>
-  <h2>Containerbuddy to the rescue!</h2>
+<section data-background="./img/Containerbuddy-Type-Color.png">
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
   <a href="https://github.com/joyent/containerbuddy">https://github.com/joyent/containerbuddy</a>
 </section>
 
