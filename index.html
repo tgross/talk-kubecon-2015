@@ -190,12 +190,13 @@
     </ul>
   </div>
   <aside class="notes" data-markdown><script type="text/template">
-      - Docker recommendation for network I/O-intensive apps
+      - Docker docs recommend for network I/O-intensive apps
       - working around with `--host` makes utilization even worse
       - Can't have multiple container per host on the same port.
   </script></aside>
 </section>
 
+<!-- TODO review this slide w/ Casey -->
 <section>
   <h2>Can we avoid NAT?</h2>
   <img style="width:50%;float:left;" data-src="img/docker-bridge-networking.png"/>
@@ -216,17 +217,6 @@
 </section>
 
 <section>
-<h2>Single Point of Failure</h2>
-<a href="http://www.pcmag.com/article2/0,2817,2413572,00.asp"><img data-src="img/pcmag-xmas-outage.png"></a>
-<aside class="notes" data-markdown><script type="text/template">
-    - LB can fail when app won't
-    - even managed LBs: this happened to Netflix and DF
-    - this event was "human error", but ELB is built on EBS
-    - so even if your AWS EC2 instances aren't you can be hit
-  </script></aside>
-</section>
-
-<section>
   <h2>DNS</h2>
   <p>Simple discovery! But...</p>
   <p class="fragment">Can't address individual hosts behind a record.</p>
@@ -235,7 +225,7 @@
   <aside class="notes" data-markdown><script type="text/template">
       - just hard-code a CNAME in your env var!
       - can't load balance via DNS except round-robin
-      - (can use Consul w/ health checking)
+      - (Kubernetes fixes lots of these, but good luck w/ managed services)
       - TTL: restart app to get changes in some frammeworks like Django and its DBs
       - TTL: ELB IP addresses change! must use alias record and custom domain TTL!
   </script></aside>
@@ -461,33 +451,6 @@
       - poll consul for `app` and fire reload on change
   </script></aside>
 </section>
-
-<section data-background="./img/grid-black.png">
-  <pre><code class="sh" data-trim>
-$ cat ./nginx/Dockerfile
-
-# a minimal Nginx container including containerbuddy and a
-# simple virtulhost config
-FROM nginx:latest
-
-# install curl and unzip
-RUN apt-get update && apt-get install -y \
-    curl \
-    unzip && \
-    rm -rf /var/lib/apt/lists/*
-
-# install consul-template
-RUN curl -Lo /tmp/consul_template_0.11.0_linux_amd64.zip \
-    https://github.com/hashicorp/consul-template/releases/download\
-    /v0.11.0/consul_template_0.11.0_linux_amd64.zip && \
-unzip -d /bin /tmp/consul_template_0.11.0_linux_amd64.zip
-
-# add containerbuddy and all our configuration
-ADD opt/containerbuddy /opt/containerbuddy/
-ADD etc/nginx/conf.d /etc/nginx/conf.d/
-  </code></pre>
-</section>
-
 
 <section data-background="./img/grid-black.png">
   <section data-background="./img/grid-black.png">
