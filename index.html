@@ -188,7 +188,6 @@
   <div>
     <p><code>--host</code> networking</p>
     <ul>
-      <li>further weakens multi-tenant security</li>
       <li>port conflicts</li>
       <li>port mapping at LB</li>
     </ul>
@@ -224,7 +223,7 @@
   <h2>DNS</h2>
   <p>Simple discovery! But...</p>
   <p class="fragment">Can't address individual hosts behind a record.</p>
-  <p class="fragment">No health checking.</p>
+  <p class="fragment">No health checking.*</p>
   <p class="fragment">TTL caching.</p>
   <aside class="notes" data-markdown><script type="text/template">
       - just hard-code a CNAME in your env var!
@@ -254,7 +253,7 @@
 <section>
   <img data-src="img/anti-pattern-2.png"/>
   <aside class="notes" data-markdown><script type="text/template">
-      scheduler-backed variant
+      scheduler-backed variant (inc Kubernetes)
       - break down discrete LB into on-host proxy (ex. HAProxy)
       - manage proxy w/ application scheduler (on-host agent)
       - agent updates config of local proxy, app containers talk only to proxy
@@ -361,10 +360,6 @@
       - doesn't have to be HTTP response from blocked server
       - can even do stuff like HTTP long polling / pubsub
   </script></aside>
-</section>
-
-<section>
-  <h2>Demo</h2>
 </section>
 
 <section>
@@ -687,7 +682,7 @@ Creating and starting 3... done
 
 <section>
   <img data-src="img/container-native-arch.png"/>
-  <a href="http://0x74696d.com/talk-kubecon-2015/#/">http://0x74696d.com/talk-kubecon-2015/#/</a>
+  <a href="http://0x74696d.com/talk-kubecon-2015/">http://0x74696d.com/talk-kubecon-2015/</a>
 </section>
 
 </div> <!-- slides -->
